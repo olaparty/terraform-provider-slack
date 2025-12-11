@@ -14,15 +14,24 @@ func dataSourceUser() *schema.Resource {
 		ReadContext: dataSourceUserRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{"id", "name", "email"},
+			},
 			"name": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ExactlyOneOf: []string{"name", "email"},
+				ExactlyOneOf: []string{"id", "name", "email"},
 			},
 			"email": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ExactlyOneOf: []string{"name", "email"},
+				ExactlyOneOf: []string{"id", "name", "email"},
+			},
+			"display_name": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
@@ -34,6 +43,14 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	client := m.(*slack.Client)
 
 	var user *slack.User
+	if id, ok := d.GetOk("id"); ok {
+		u, err := client.GetUserInfoContext(ctx, id.(string))
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("not found %s: %w", id.(string), err))
+		}
+		user = u
+	}
+
 	if name, ok := d.GetOk("name"); ok {
 		u, err := searchByName(ctx, name.(string), client)
 		if err != nil {
@@ -61,6 +78,10 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	if err := d.Set("email", user.Profile.Email); err != nil {
 		return diag.Errorf("error setting name: %s", err)
+	}
+
+	if err := d.Set("display_name", user.Profile.DisplayName); err != nil {
+		return diag.Errorf("error setting display_name: %s", err)
 	}
 
 	return diags
