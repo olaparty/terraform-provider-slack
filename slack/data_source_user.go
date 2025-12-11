@@ -17,6 +17,7 @@ func dataSourceUser() *schema.Resource {
 			"id": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Description:  "The Slack user ID",
 				ExactlyOneOf: []string{"id", "name", "email"},
 			},
 			"name": {
@@ -30,8 +31,9 @@ func dataSourceUser() *schema.Resource {
 				ExactlyOneOf: []string{"id", "name", "email"},
 			},
 			"display_name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The display name of the user",
 			},
 		},
 	}
@@ -77,7 +79,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	if err := d.Set("email", user.Profile.Email); err != nil {
-		return diag.Errorf("error setting name: %s", err)
+		return diag.Errorf("error setting email: %s", err)
 	}
 
 	if err := d.Set("display_name", user.Profile.DisplayName); err != nil {
